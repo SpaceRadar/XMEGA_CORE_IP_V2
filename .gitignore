@@ -54,6 +54,7 @@ Temporary Items
 *.rtd
 *.rpt
 *.str
+*.zip
 XMEGA_CORE_IP_V2.cache
 XMEGA_CORE_IP_V2.hw
 XMEGA_CORE_IP_V2.ip_user_files
