@@ -17,6 +17,7 @@ Utilization report from implementation:
 
 At this moment has implemented the next instructions:
 
+
 * NOP(1 clock)
 * MOVW(1 clock)
 * MULS (not implemented yet)
@@ -73,7 +74,9 @@ At this moment has implemented the next instructions:
 
 The implementation is made for Arty Artix-7 from Digilent.
 On the implementation and simulation it run this bounch of code that will togle and xor the eight LEDs from board with the four switches and four buttons from the board every ~ 1s.
+
 This sequency is made to test the implemented instructions.
+
 
 ```asm
 .org 0
