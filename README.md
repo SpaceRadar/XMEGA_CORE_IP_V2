@@ -3,6 +3,18 @@ This is a easy to use Atmel MEGA core IP
 
 This is an optimized IP of the Atmel XMEGA processor, that is very simple to use.
 
+Utilization report from implementation:
+
+Slice LUTs = 1271
+Slice Registers = 119
+F7 Muxes = 8
+F8 Muxes = 0
+Slices = 364
+LUT as logic = 1239
+LUT as memory = 32
+LUT as Flop Flops Pairs = 82
+
+
 At this moment has implemented the next instructions:
 
 * NOP(1 clock)
