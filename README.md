@@ -3,6 +3,10 @@ This is a easy to use Atmel MEGA core IP
 
 This is an optimized IP of the Atmel XMEGA processor, that is very simple to use.
 
+It is a fully asynchronnous core only with some parts that are sinchronized with the clock and it is synchronized only on positive edge of the clock.
+
+The posedge to posedge clock latency must be bigger than total latency of the ROM memory and core logic.
+
 Utilization report from implementation:
 
 * Slice LUTs = 1271
@@ -71,9 +75,12 @@ At this moment has implemented the next instructions:
 * BLD, BST (1 clock)
 * SBRC, SBRS (2 clock)
 
+All instruction that is executed on more than 1 core clock it will be optimized. 
 
 The implementation is made for Arty Artix-7 from Digilent.
 On the implementation and simulation it run this bounch of code that will togle and xor the eight LEDs from board with the four switches and four buttons from the board every ~ 1s.
+
+The core work at 66.66Mhz without timing violations, but in reality can work at more than 100Mhz.
 
 This sequency is made to test the implemented instructions.
 
