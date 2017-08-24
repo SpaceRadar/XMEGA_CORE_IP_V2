@@ -61,125 +61,56 @@ begin
 	ALU_FLAG_I_OUT = 0;
 end
 
-wire in_addr_1_and_2_equal = in_addr_1 == in_addr_2;
+reg in_addr_1_and_2_equal;
 
-always @ (*)
+always @ (in_addr_1 or in_addr_2)
 begin
-	casex(inst)
-		`INSTRUCTION_ADD: 
-		begin
-			if(in_addr_1_and_2_equal)
-				inst_dec_out <= `ALU_SELECT_BUS_SIZE'b10000000;
-			else
-				inst_dec_out <= `ALU_SELECT_BUS_SIZE'b1;
-		end
-		`INSTRUCTION_ADC: 
-		begin
-			if(in_addr_1_and_2_equal)
-				inst_dec_out <= `ALU_SELECT_BUS_SIZE'b10000;
-			else
-				inst_dec_out <= `ALU_SELECT_BUS_SIZE'b10;
-		end
-		`INSTRUCTION_SUB: 		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b100;
-		`INSTRUCTION_SBC: 		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b1000;
-		`INSTRUCTION_LSR: 		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b10000;
-		//`ALU_LSR: 			inst_dec_out <= `ALU_SELECT_BUS_SIZE'b100000;
-		`INSTRUCTION_ROR: 		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b1000000;
-		//`ALU_ROL: 			inst_dec_out <= `ALU_SELECT_BUS_SIZE'b10000000;
-		`INSTRUCTION_AND: 		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b100000000;
-		`INSTRUCTION_OR: 		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b1000000000;
-		`INSTRUCTION_EOR: 		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b10000000000;
-		`INSTRUCTION_MOV: 		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b100000000000;
-		`INSTRUCTION_MOVW: 		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b1000000000000;
-		`INSTRUCTION_COM: 		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b10000000000000;
-		`INSTRUCTION_NEG: 		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b100000000000000;
-		`INSTRUCTION_ADIW: 		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b1000000000000000;
-		`INSTRUCTION_SBIW: 		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b10000000000000000;
-		`INSTRUCTION_MUL: 		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b100000000000000000;
-		`INSTRUCTION_ASR: 		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b1000000000000000000;
-		`INSTRUCTION_CP,
-		`INSTRUCTION_CPI:		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b10000000000000000000;
-		`INSTRUCTION_CPC:		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b100000000000000000000;
-		`INSTRUCTION_SWAP:		inst_dec_out <= `ALU_SELECT_BUS_SIZE'b1000000000000000000000;
-		`INSTRUCTION_SEx_CLx:	inst_dec_out <= `ALU_SELECT_BUS_SIZE'b10000000000000000000000;
-		default: 				inst_dec_out <= `ALU_SELECT_BUS_SIZE'h00000000;
-	endcase
+	in_addr_1_and_2_equal = (in_addr_1 == in_addr_2) ? 1'b1 : 1'b0;
 end
 
-reg [15:0]in_2_int_1;
 reg [15:0]in_2_int;
 reg cin_int;
 
 always @ (*)
 begin
-	in_2_int_1 <= ~in_2;
 	in_2_int <= in_1;
-	cin_int <= in_1;
-	casex(inst)
-	`INSTRUCTION_ADD,
-	`INSTRUCTION_ADC:
-	begin
-		if(!in_addr_1_and_2_equal)
-			in_2_int_1 <= in_2;
-	end
-	`INSTRUCTION_ADIW: in_2_int_1 <= in_2;
-	//default: in_2_int_1 <= ~in_2;
-	endcase
+	cin_int <= ALU_FLAG_C_IN;
 
 	casex(inst)
 	`INSTRUCTION_ADD,
 	`INSTRUCTION_ADC:
 	begin
 		if(!in_addr_1_and_2_equal)
-			in_2_int <= in_2_int_1;
+			in_2_int <= in_2;
 	end
 	`INSTRUCTION_ADIW,
 	`INSTRUCTION_SBIW,
 	`INSTRUCTION_SUB,
-	`INSTRUCTION_SBC: in_2_int <= in_2_int_1;
-	//default: in_2_int <= in_1;
+	`INSTRUCTION_SBC,
+	`INSTRUCTION_SUBI,
+	`INSTRUCTION_SBCI: in_2_int <= in_2;
 	endcase
-
 
 	casex(inst)
 	`INSTRUCTION_ADD,
-	`INSTRUCTION_SUB,
 	`INSTRUCTION_LSR,
-	`INSTRUCTION_NEG: cin_int <= 1'b0;
-	//default: cin_int <= in_1;
+	`INSTRUCTION_NEG,
+	`INSTRUCTION_SUB,
+	`INSTRUCTION_SUBI: cin_int <= 1'b0;
 	endcase
+	
 end
-//assign in_2_int_1 = (inst_dec_out[`ALU_ADD] || inst_dec_out[`ALU_ADC] || inst_dec_out[`ALU_ADIW]) ? in_2 : ~in_2;
-//assign in_2_int = (inst_dec_out[`ALU_ADD] || inst_dec_out[`ALU_ADC] || inst_dec_out[`ALU_SUB] || inst_dec_out[`ALU_SBC] || inst_dec_out[`ALU_ADIW] || inst_dec_out[`ALU_SBIW]) ? in_2_int_1 : in_1;
-wire [15:0]in_1_int;
-assign in_1_int = (inst_dec_out[`ALU_NEG]) ? 16'hFFFF : in_1;
-//assign cin_int = (inst_dec_out[`ALU_ADD] || inst_dec_out[`ALU_SUB] || inst_dec_out[`ALU_LSL] || inst_dec_out[`ALU_LSR] || inst_dec_out[`ALU_NEG]) ? 0 : ALU_FLAG_C_IN;
-wire [16:0] add_result_int_w_c;
-`ifndef USE_CUSTOM_ADDER
-wire [17:0] add_result_int_w_c_tmp;
-assign add_result_int_w_c_tmp = {in_1_int, 1'b1} + {in_2_int, cin_int};
-assign add_result_int_w_c = add_result_int_w_c_tmp[17:1];
-`endif
+
+wire [17:0] add_result_int_w_c_tmp = {in_1, 1'b1} + {in_2_int, cin_int};
+wire [16:0] add_result_int_w_c = add_result_int_w_c_tmp[17:1];
+wire [17:0] sub_result_int_w_c_tmp = {in_1, 1'b0} - {in_2_int, cin_int};
+wire [16:0] sub_result_int_w_c = sub_result_int_w_c_tmp[17:1];
+
 `ifdef USE_MULTIPLYER
-`ifdef USE_CUSTOM_MULTIPLYER
-wire [15:0]mul_result_int;
-multiplyer MUL(in_1, in_2, mul_result_int);
-`else
 wire [15:0]mul_result_int = in_1 * in_2;
 `endif
-`endif
 wire carry_8bit = in_1 < in_2;
-wire carry_8bit_plus_carry = in_1 < in_2 + ALU_FLAG_C_IN;
-
-`ifdef USE_CUSTOM_ADDER
-add_w_carry # (.WIDTH(16)) alu_add(
-		.c_in(cin_int),
-		.in_1(in_1_int),
-		.in_2(in_2_int),
-		.out(add_result_int_w_c),
-		.c_out()	
-	);
-`endif
+wire carry_8bit_plus_carry = in_1 < (in_2 + ALU_FLAG_C_IN);
 
 always @ (*)
 begin
@@ -188,30 +119,32 @@ begin
 		`INSTRUCTION_ADD: 
 		begin
 			if(in_addr_1_and_2_equal)
-				{ALU_FLAG_C_OUT, out} <= {in_1_int[7], 7'h00, in_1_int[6:0], cin_int};//LSR
+				{ALU_FLAG_C_OUT, out} <= {in_1[7], 7'h00, in_1[6:0], cin_int};//LSL
 			else
 				{ALU_FLAG_C_OUT, out} <= {add_result_int_w_c[8], 8'h00, add_result_int_w_c[7:0]};
 		end
 		`INSTRUCTION_ADC: 
 		begin
 			if(in_addr_1_and_2_equal)
-				{ALU_FLAG_C_OUT, out} <= {in_1_int[7], 7'h00, in_1_int[6:0], cin_int};//ROL
+				{ALU_FLAG_C_OUT, out} <= {in_1[7], 7'h00, in_1[6:0], cin_int};//ROL
 			else
 				{ALU_FLAG_C_OUT, out} <= {add_result_int_w_c[8], 8'h00, add_result_int_w_c[7:0]};
 		end
 		`INSTRUCTION_SUB,
-		`INSTRUCTION_SBC: 		{ALU_FLAG_C_OUT, out} <= {add_result_int_w_c[8], 8'h00, add_result_int_w_c[7:0]};
+		`INSTRUCTION_SBC,
+		`INSTRUCTION_SUBI,
+		`INSTRUCTION_SBCI: 		{ALU_FLAG_C_OUT, out} <= {sub_result_int_w_c[8], 8'h00, sub_result_int_w_c[7:0]};
 		`INSTRUCTION_LSR,
-		`INSTRUCTION_ROR: 		{ALU_FLAG_C_OUT, out} <= {in_1_int[0], 7'h00, cin_int, in_1_int[7:1]};
-		`INSTRUCTION_AND: 		{ALU_FLAG_C_OUT, out} <= {9'h00, (in_1_int[7:0] & in_2[7:0])};
-		`INSTRUCTION_OR: 		{ALU_FLAG_C_OUT, out} <= {9'h00, (in_1_int[7:0] | in_2[7:0])};
-		`INSTRUCTION_EOR: 		{ALU_FLAG_C_OUT, out} <= {9'h00, (in_1_int[7:0] ^ in_2[7:0])};
-		`INSTRUCTION_MOV: 		{ALU_FLAG_C_OUT, out} <= {9'h00, in_1_int[7:0]};
-		`INSTRUCTION_MOVW: 		{ALU_FLAG_C_OUT, out} <= {1'h00, in_1_int};
-		`INSTRUCTION_COM: 		{ALU_FLAG_C_OUT, out} <= {1'b1, 8'h00, (~in_1_int[7:0])};
-		`INSTRUCTION_NEG: 		{ALU_FLAG_C_OUT, out} <= {|add_result_int_w_c[7:0], 8'h00, add_result_int_w_c[7:0]};
-		`INSTRUCTION_ADIW,
-		`INSTRUCTION_SBIW: 		{ALU_FLAG_C_OUT, out} <= add_result_int_w_c;
+		`INSTRUCTION_ROR: 		{ALU_FLAG_C_OUT, out} <= {in_1[0], 7'h00, cin_int, in_1[7:1]};
+		`INSTRUCTION_AND: 		{ALU_FLAG_C_OUT, out} <= {9'h00, (in_1[7:0] & in_2[7:0])};
+		`INSTRUCTION_OR: 		{ALU_FLAG_C_OUT, out} <= {9'h00, (in_1[7:0] | in_2[7:0])};
+		`INSTRUCTION_EOR: 		{ALU_FLAG_C_OUT, out} <= {9'h00, (in_1[7:0] ^ in_2[7:0])};
+		`INSTRUCTION_MOV: 		{ALU_FLAG_C_OUT, out} <= {9'h00, in_1[7:0]};
+		`INSTRUCTION_MOVW: 		{ALU_FLAG_C_OUT, out} <= {1'h00, in_1};
+		`INSTRUCTION_COM: 		{ALU_FLAG_C_OUT, out} <= {1'b1, 8'h00, (8'h00 - in_1[7:0])};
+		`INSTRUCTION_NEG: 		{ALU_FLAG_C_OUT, out} <= {|in_1[7:0], 8'h00, ~in_1[7:0]};
+		`INSTRUCTION_ADIW: 		{ALU_FLAG_C_OUT, out} <= add_result_int_w_c;
+		`INSTRUCTION_SBIW: 		{ALU_FLAG_C_OUT, out} <= sub_result_int_w_c;
 `ifdef USE_MULTIPLYER
 		`INSTRUCTION_MUL: 		{ALU_FLAG_C_OUT, out} <= {mul_result_int[15], mul_result_int};
 `endif
@@ -220,36 +153,14 @@ begin
 		`INSTRUCTION_CPI:		{ALU_FLAG_C_OUT, out} <= {carry_8bit, 16'h0000};
 		`INSTRUCTION_CPC:		{ALU_FLAG_C_OUT, out} <= {carry_8bit_plus_carry, 16'h0000};
 		`INSTRUCTION_SWAP:		{ALU_FLAG_C_OUT, out} <= {1'b0, in_1[3:0], in_1[7:4]};
-		`INSTRUCTION_SEx_CLx:	{ALU_FLAG_C_OUT, out} <= {inst[7], {16{1'b0}}};
+		`INSTRUCTION_SEx_CLx:	{ALU_FLAG_C_OUT, out} <= inst[6:4] ? {ALU_FLAG_C_IN, {16{1'b0}}} : {inst[7], {16{1'b0}}};
 	endcase
 end
 
-/*assign {ALU_FLAG_C_OUT, out} = (inst_dec_out[`ALU_ADD] || inst_dec_out[`ALU_SUB]) ? {add_result_int_w_c[8], 8'h00, add_result_int_w_c[7:0]} :
-			(inst_dec_out[`ALU_ADC]|| inst_dec_out[`ALU_SBC]) ? {add_result_int_w_c[8], 8'h00, add_result_int_w_c[7:0]} :
-			(inst_dec_out[`ALU_ADIW] || inst_dec_out[`ALU_SBIW]) ? add_result_int_w_c :
-			(inst_dec_out[`ALU_LSL] || inst_dec_out[`ALU_ROL]) ? {in_1_int[7], 7'h00, in_1_int[6:0], cin_int} :
-			(inst_dec_out[`ALU_LSR] || inst_dec_out[`ALU_ROR]) ? {in_1_int[0], 7'h00, cin_int, in_1_int[7:1]} :
-			(inst_dec_out[`ALU_AND]) ? {9'h00, (in_1_int[7:0] & in_2[7:0])} :
-			(inst_dec_out[`ALU_OR]) ? {9'h00, (in_1_int[7:0] | in_2[7:0])} :
-			(inst_dec_out[`ALU_EOR]) ? {9'h00, (in_1_int[7:0] ^ in_2[7:0])} :
-			(inst_dec_out[`ALU_COM]) ? {1'b1, 8'h00, (~in_1_int[7:0])} :
-			(inst_dec_out[`ALU_NEG]) ? {|add_result_int_w_c[7:0], 8'h00, add_result_int_w_c[7:0]} :
-			(inst_dec_out[`ALU_MOV]) ? {9'h00, in_1_int[7:0]} : 
-			(inst_dec_out[`ALU_MOVW]) ? {1'h00, in_1_int} : 
-`ifdef USE_MULTIPLYER
-			(inst_dec_out[`ALU_MUL]) ? {mul_result_int[15], mul_result_int} : 
-`endif
-			(inst_dec_out[`ALU_ASR]) ? {in_1[0], 7'h00, in_1[7], in_1[7:1]} : 
-			(inst_dec_out[`ALU_CP_CPI]) ? {carry_8bit, 16'h0000} : 
-			(inst_dec_out[`ALU_CPC]) ? {carry_8bit_plus_carry, 16'h0000} : 
-			(inst_dec_out[`ALU_SWAP]) ? {1'b0, in_1[3:0], in_1[7:4]} : 
-			(inst_dec_out[`SEx_CLx]) ? {inst[7], {16{1'b0}}} :
-			17'h00000;
-*/	
 /*
  * ALU FLAG effect for each instruction.
  */
-always @ (*)
+always @ (inst or out or in_1 or in_2)
 begin
 	ALU_FLAG_Z_OUT <= ALU_FLAG_Z_IN;
 	ALU_FLAG_N_OUT <= ALU_FLAG_N_IN;
@@ -264,38 +175,36 @@ begin
 		if(in_addr_1_and_2_equal)
 		begin
 			ALU_FLAG_H_OUT <= in_1[3];
-			ALU_FLAG_S_OUT <= ALU_FLAG_N_OUT & ALU_FLAG_V_OUT;
 			ALU_FLAG_V_OUT <= ALU_FLAG_N_OUT & ALU_FLAG_C_OUT;
-			ALU_FLAG_N_OUT <= out[7];
+		end
+		else
+		begin
+			ALU_FLAG_H_OUT <= (in_1[3] & in_2[3])|(in_2[3] & ~out[3])|(~out[3] & in_1[3]);
+			ALU_FLAG_V_OUT <= (in_1[7] & in_2[7] & ~out[7])|(~in_1[7] & ~in_2[7] & out[7]);
+		end
+		ALU_FLAG_S_OUT <= ALU_FLAG_N_OUT & ALU_FLAG_V_OUT;
+		ALU_FLAG_N_OUT <= out[7];
+		ALU_FLAG_Z_OUT <= &(~out[7:0]);
+	end
+	`INSTRUCTION_ADC:
+	begin
+		if(in_addr_1_and_2_equal)
+		begin
+			ALU_FLAG_H_OUT <= in_1[3];
+			ALU_FLAG_V_OUT <= ALU_FLAG_N_OUT & ALU_FLAG_C_OUT;
 			ALU_FLAG_Z_OUT <= &(~out[7:0]);
 		end
 		else
 		begin
 			ALU_FLAG_H_OUT <= (in_1[3] & in_2[3])|(in_2[3] & ~out[3])|(~out[3] & in_1[3]);
-			ALU_FLAG_S_OUT <= ALU_FLAG_N_OUT & ALU_FLAG_V_OUT;
 			ALU_FLAG_V_OUT <= (in_1[7] & in_2[7] & ~out[7])|(~in_1[7] & ~in_2[7] & out[7]);
-			ALU_FLAG_N_OUT <= out[7];
-			ALU_FLAG_Z_OUT <= &(~out[7:0]);
+			ALU_FLAG_Z_OUT <= &(~{out[7:0], ALU_FLAG_Z_IN});
 		end
-	end
-	`INSTRUCTION_ADC:
-	if(in_addr_1_and_2_equal)
-	begin
-		ALU_FLAG_H_OUT <= in_1[3];
 		ALU_FLAG_S_OUT <= ALU_FLAG_N_OUT & ALU_FLAG_V_OUT;
-		ALU_FLAG_V_OUT <= ALU_FLAG_N_OUT & ALU_FLAG_C_OUT;
 		ALU_FLAG_N_OUT <= out[7];
-		ALU_FLAG_Z_OUT <= &(~out[7:0]);
-	end
-	else
-	begin
-		ALU_FLAG_H_OUT <= (in_1[3] & in_2[3])|(in_2[3] & ~out[3])|(~out[3] & in_1[3]);
-		ALU_FLAG_S_OUT <= ALU_FLAG_N_OUT & ALU_FLAG_V_OUT;
-		ALU_FLAG_V_OUT <= (in_1[7] & in_2[7] & ~out[7])|(~in_1[7] & ~in_2[7] & out[7]);
-		ALU_FLAG_N_OUT <= out[7];
-		ALU_FLAG_Z_OUT <= &(~{out[7:0], ALU_FLAG_Z_IN});
 	end
 	`INSTRUCTION_SUB,
+	`INSTRUCTION_SUBI,
 	`INSTRUCTION_CP,
 	`INSTRUCTION_CPI:
 	begin
@@ -306,6 +215,7 @@ begin
 		ALU_FLAG_Z_OUT <= &(~out[7:0]);
 	end
 	`INSTRUCTION_SBC,
+	`INSTRUCTION_SBCI,
 	`INSTRUCTION_CPC:
 	begin
 		ALU_FLAG_H_OUT <= (in_1[3] & in_2[3])|(in_2[3] & ~out[3])|(~out[3] & in_1[3]);

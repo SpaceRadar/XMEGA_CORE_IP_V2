@@ -1,4 +1,15 @@
 
+`define ALU_FLAG_C	0
+`define ALU_FLAG_Z	1
+`define ALU_FLAG_N	2
+`define ALU_FLAG_V	3
+`define ALU_FLAG_S	4
+`define ALU_FLAG_H	5
+`define ALU_FLAG_T	6
+`define ALU_FLAG_I	7
+
+
+
 `define ALU_NOP 	0
 `define ALU_ADD 	1
 `define ALU_ADC 	2

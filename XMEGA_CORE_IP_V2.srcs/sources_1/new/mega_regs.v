@@ -43,7 +43,7 @@ reg [4:0]k;
 
 initial
 begin
-	for (k = 0; k < 16 - 1; k = k + 1)
+	for (k = 0; k < 16; k = k + 1)
 	begin
 		REGL[k] = 0;
 		REGH[k] = 0;
