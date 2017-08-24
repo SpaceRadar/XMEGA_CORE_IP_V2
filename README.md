@@ -9,71 +9,71 @@ The posedge to posedge clock latency must be bigger than total latency of the RO
 
 Utilization report from implementation:
 
-* Slice LUTs = 1271
-* Slice Registers = 119
-* F7 Muxes = 8
+* Slice LUTs = 1120
+* Slice Registers = 50
+* F7 Muxes = 21
 * F8 Muxes = 0
-* Slices = 364
-* LUT as logic = 1239
+* Slices = 322
+* LUT as logic = 1088
 * LUT as memory = 32
-* LUT as Flop Flops Pairs = 82
+* LUT as Flop Flops Pairs = 32
 
 
 At this moment has implemented the next instructions:
 
 
-* NOP(1 clock)
-* MOVW(1 clock)
+* NOP (1 clock)
+* MOVW (1 clock)
 * MULS (not implemented yet)
 * MULSU (not implemented yet)
 * FMUL (not implemented yet)
 * FMULSU (not implemented yet)
-* CPC, CP(1 clock)
-* SBC, SUB(1 clock)
-* ADD, ADC, ROL, LSL(1 clock)
-* CPSE(2 clock)
-* AND(1 clock)
-* EOR(1 clock)
-* OR(1 clock)
-* MOV(1 clock)
-* CPI(1 clock)
-* SBCI, SUBI(1 clock)
-* ORI, SBR(1 clock)
-* ANDI, CBR(1 clock)
-* LDD, STD(3 clock)
-* LDS, STS (3 clock)
-* LD Y+, LD Z+, ST Y+, ST Z+(3 clock)
-* LD -Y, LD -Z, ST -Y, ST -Z(3 clock)
+* CPC, CP (1 clock)
+* SBC, SUB (1 clock)
+* ADD, ADC, ROL, LSL (1 clock)
+* CPSE (2 clock) In second cicle need to see if next inst is a on word or two word inst.
+* AND (1 clock)
+* EOR (1 clock)
+* OR (1 clock)
+* MOV (1 clock)
+* CPI (1 clock)
+* SBCI, SUBI (1 clock)
+* ORI, SBR (1 clock)
+* ANDI, CBR (1 clock)
+* LDD, STD (1 clock)
+* LDS, STS (1 clock)
+* LD Y+, LD Z+, ST Y+, ST Z+ (not implemented yet)
+* LD -Y, LD -Z, ST -Y, ST -Z (not implemented yet)
 * LPM_Z (not implemented yet)
 * LPM_ZP (not implemented yet)
-* LD_X, ST_X(3 clock)
-* LD X+, ST X+(3 clock)
-* LD -X, ST -X(3 clock)
-* POP, PUSH(3 clock/ 2 clock)
-* COM(1 clock)
-* NEG(1 clock)
-* SWAP(1 clock)
-* INC(1 clock)
-* ASR(1 clock)
-* LSR(1 clock)
-* ROR(1 clock)
+* LD_X, ST_X (not implemented yet)
+* LD X+, ST X+ (not implemented yet)
+* LD -X, ST -X (not implemented yet)
+* POP, PUSH (1 clock)
+* COM (1 clock)
+* NEG (1 clock)
+* SWAP (1 clock)
+* INC (1 clock)
+* ASR (1 clock)
+* LSR (1 clock)
+* ROR (1 clock)
 * SEx, CLx(1 clock)
-* RET(4 clock)
-* RETI (4 clock)
-* IJMP, ICALL (1 clock, 3 clock)
-* DEC(1 clock)
-* JMP, CALL(2 clock, 3 clock)
-* ADIW(1 clock)
-* SBIW(1 clock)
+* RET (2 clock)
+* RETI (2 clock)
+* IJMP, ICALL (1 clock, 2 clock)
+* DEC (1 clock)
+* JMP, CALL (2 clock)
+* ADIW (1 clock)
+* SBIW (1 clock)
 * CBI, SBI (1 clock)
-* SBIC, SBIS (2 clock)
+* SBIC, SBIS (2 clock) In second cicle need to see if next inst is a on word or two word inst.
 * MUL (1 clock) Optional, has 3 ms latency, I will put them on 2 clock to rise working frequency of the core.
-* IN, OUT(1 clock)
-* RJMP, RCALL(1 clock, 3 clock)
-* LDI(1 clock)
-* BRxx(1 clock)
+* IN, OUT (1 clock)
+* RJMP, RCALL (1 clock, 2 clock)
+* LDI (1 clock)
+* BRxx (1 clock)
 * BLD, BST (1 clock)
-* SBRC, SBRS (2 clock)
+* SBRC, SBRS (2 clock) In second cicle need to see if next inst is a on word or two word inst.
 
 All instruction that is executed on more than 1 core clock it will be optimized. 
 
