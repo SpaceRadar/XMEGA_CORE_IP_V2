@@ -1,6 +1,6 @@
 # XMEGA_CORE_IP_V2
 
-This is an optimized IP of the Atmel XMEGA processor, that is very simple to use.
+This is an optimized IP of the Atmel MEGA and XMEGA processor, that is very simple to use.
 
 It is a fully asynchronnous core only with some parts that are sinchronized with the clock and it is synchronized only on positive edge of the clock.
 
