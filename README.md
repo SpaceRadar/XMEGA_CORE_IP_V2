@@ -73,7 +73,7 @@ At this moment has implemented the next instructions:
 * SBIW (1 clock)
 * CBI, SBI (1 clock)
 * SBIC, SBIS (2 clock)
-* MUL (2 clock) (original 1 clock).
+* MUL (2 clock) (original 1 clock) One extra clock because the multiply unit on FPGA has ~3ms latency.
 * IN, OUT (1 clock)
 * RJMP, RCALL (1 clock, 2 clock)
 * LDI (1 clock)
