@@ -1,5 +1,4 @@
 # XMEGA_CORE_IP_V2
-This is a easy to use Atmel MEGA core IP
 
 This is an optimized IP of the Atmel XMEGA processor, that is very simple to use.
 
