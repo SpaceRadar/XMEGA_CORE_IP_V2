@@ -22,6 +22,7 @@
 
 `include "mega_alu.vh"
 `include "mega_core.vh"
+`include "mega_core_cfg.vh"
 
 module mega_core # (
 	parameter bus_addr_pgm_width = 11,
@@ -47,8 +48,8 @@ module mega_core # (
 	output reg io_re
     );
 
-//assign data_re = 1'b1;
 reg data_we_int;
+reg data_we_int1;
 
 reg [7:0]ALU_FLAGS = 0;	//Carry Flag
 wire ALU_FLAG_C_OUT;	//Carry Flag
@@ -61,10 +62,13 @@ wire ALU_FLAG_T_OUT;	//Transfer bit used by BLD and BST instructions
 wire ALU_FLAG_I_OUT;	//Global Interrupt Enable/Disable Flag
 reg [15:0]PC = 0;
 assign pgm_addr = PC;
+wire [15:0]PC_PLUS_ONE = PC + 1;
+wire [15:0]PC_PLUS_TWO = PC + 2;
 reg [15:0]SP = 0;
+wire [15:0]SP_PLUS_ONE = SP + 1;
+wire [15:0]SP_MINUS_ONE = SP - 1;
 reg [2:0]step_cnt = 0;
 reg [15:0]tmp_pgm_data = 0;
-reg [15:0]tmp_pgm_data_connector = 0;
 
 // REG aditional
 reg write_to_reg = 0;
@@ -80,6 +84,8 @@ reg rd_16bit_d = 0;
 wire read_d;
 reg [4:0]rd_addr_r = 0;
 wire [15:0]rd_data_r;
+wire [15:0]rd_data_r_PLUS_ONE = rd_data_r + 1;
+wire [15:0]rd_data_r_MINUS_ONE = rd_data_r - 1;
 reg rd_16bit_r = 0;
 wire read_r;
 
@@ -91,6 +97,64 @@ wire alu_c_out;
 reg [15:0]indirect_addr_offset = 0;
 wire [15:0]indirect_addr_offset_res = rd_data_r + indirect_addr_offset;
 reg [15:0]ldd_back_offset_res;
+
+/*
+ * Data address demultiplexer.
+ */
+always @ (*)
+begin
+	data_addr <= 'hz;
+	case(step_cnt)
+	`STEP1:
+	begin
+		casex(pgm_data)
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+		`INSTRUCTION_LDD_STD: data_addr <= indirect_addr_offset_res;
+		`INSTRUCTION_LD_ST_X,
+		`INSTRUCTION_LD_ST_XP,
+		`INSTRUCTION_LD_ST_YZP: data_addr <= rd_data_r;
+		`INSTRUCTION_LD_ST_XN,
+		`INSTRUCTION_LD_ST_YZN: data_addr <= rd_data_r_MINUS_ONE;
+		`INSTRUCTION_POP_PUSH: 
+		begin
+			if(pgm_data[9])
+				data_addr <= SP;
+			else
+				data_addr <= SP_PLUS_ONE;
+		end
+`endif
+`endif
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+		`INSTRUCTION_ICALL,
+`endif
+`endif
+		`INSTRUCTION_RCALL,
+		`INSTRUCTION_CALL: data_addr <= SP;
+		`INSTRUCTION_RET_RETI: data_addr <= SP_PLUS_ONE;
+		`INSTRUCTION_XCH,
+		`INSTRUCTION_LAS,
+		`INSTRUCTION_LAC,
+		`INSTRUCTION_LAT: data_addr <= rd_data_r;
+		endcase
+	end
+	`STEP2:
+	begin
+		casex(tmp_pgm_data)
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+		`INSTRUCTION_ICALL,
+`endif
+`endif
+		`INSTRUCTION_CALL,
+		`INSTRUCTION_RCALL: data_addr <= SP;
+		`INSTRUCTION_RET_RETI: data_addr <= SP_PLUS_ONE;
+		`INSTRUCTION_LDS_STS: data_addr <= pgm_data;
+		endcase
+	end
+	endcase
+end
 
 /*
  * Translate core instructions to REG adresses, and connect busses to ALU.
@@ -113,8 +177,10 @@ begin
 	io_re <= 1'b0;
 	io_addr <= 5'hz;
 	io_out <= 8'hz;
+	data_out <= 'hz;
 	data_re <= 1'b0;
 	indirect_addr_offset <= {16{1'b00}};
+	data_we_int1 <= 1'b0;
 	case(step_cnt)
 	`STEP1:
 	begin
@@ -128,9 +194,9 @@ begin
 			rd_addr_r <= {pgm_data[3:0], 1'b0};
 			rd_16bit_r <= 1'b1;
 			// Connect busses
-			rw_data <= alu_out;
 			alu_in_1 <= rd_data_d;
 			alu_in_2 <= rd_data_r;
+			rw_data <= alu_out;
 			// Signalize write_to_reg;
 			write_to_reg <= 1'b1;
 		end
@@ -140,9 +206,9 @@ begin
 			rd_addr_d <= pgm_data[8:4];
 			rd_addr_r <= {pgm_data[9], pgm_data[3:0]};
 			// Connect busses
-			rw_data <= alu_out;
 			alu_in_1 <= rd_data_d;
 			alu_in_2 <= rd_data_r;
+			rw_data <= alu_out;
 		end
 		`INSTRUCTION_SBC_SUB_ADD_ADC,
 		`INST_AND_EOR_OR_MOV:
@@ -151,9 +217,9 @@ begin
 			rd_addr_d <= pgm_data[8:4];
 			rd_addr_r <= {pgm_data[9], pgm_data[3:0]};
 			// Connect busses
-			rw_data <= alu_out;
 			alu_in_1 <= rd_data_d;
 			alu_in_2 <= rd_data_r;
+			rw_data <= alu_out;
 			// Signalize write_to_reg;
 			write_to_reg <= 1'b1;
 		end
@@ -163,9 +229,9 @@ begin
 			rw_addr <= {1'b1, pgm_data[7:4]};
 			rd_addr_d <= {1'b1, pgm_data[7:4]};
 			// Connect busses
-			rw_data <= alu_out;
 			alu_in_1 <= rd_data_d;
 			alu_in_2 <= {pgm_data[11:8], pgm_data[3:0]};
+			rw_data <= alu_out;
 			// Signalize write_to_reg;
 			write_to_reg <= 1'b1;
 		end
@@ -177,83 +243,126 @@ begin
 			rw_addr <= pgm_data[8:4];
 			rd_addr_d <= pgm_data[8:4];
 			// Connect busses
-			rw_data <= alu_out;
 			alu_in_1 <= rd_data_d;
+			casex(pgm_data)
+			`INSTRUCTION_INC: alu_in_2 <= 16'h0001;
+			`INSTRUCTION_DEC: alu_in_2 <= 16'hFFFF;
+			endcase
+			rw_data <= alu_out;
 			// Signalize write_to_reg;
 			write_to_reg <= 1'b1;
 		end
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
 		`INSTRUCTION_LDD_STD:
 		begin
 			rd_addr_r <= {{3{1'b1}}, ~pgm_data[3], 1'b0};
 			rd_16bit_r <= 1'b1;
+			indirect_addr_offset <= {{11{1'b0}}, pgm_data[11:10], pgm_data[2:0]};
+			if(pgm_data[9])
+			begin
+				rd_addr_d <= pgm_data[8:4];
+				data_out <= rd_data_d;
+				data_we_int1 <= 1'b1;
+			end
+			else
+			begin
+				rw_addr <= pgm_data[8:4];
+				// Connect busses
+				rw_data <= data_in;
+				// Signalize write_to_reg;
+				write_to_reg <= 1'b1;
+				data_re <= 1'b1;
+			end
 		end
 		`INSTRUCTION_LD_ST_X:
 		begin
-			rd_addr_d <= 5'd26;
-			rd_16bit_d <= 1'b1;
-			indirect_addr_offset <= 16'h0000;
-			if(!pgm_data[9])
-				data_re <= 1'b1;
-		end
-		`INSTRUCTION_LD_ST_YZP:
-		begin
-			rd_addr_d <= {{3{1'b1}}, pgm_data[3], 1'b0};
-			rd_16bit_d <= 1'b1;
-			rw_addr <= {{3{1'b1}}, pgm_data[3], 1'b0};
-			rw_16bit <= 1'b1;
-			rw_data <= indirect_addr_offset_res;
-			if(!pgm_data[9])
-				data_re <= 1'b1;
+			rd_addr_r <= 5'd26;
+			rd_16bit_r <= 1'b1;
+			if(pgm_data[9])
+			begin
+				rd_addr_d <= pgm_data[8:4];
+				data_out <= rd_data_d;
+				data_we_int1 <= 1'b1;
+			end
 			else
+			begin
+				rw_addr <= pgm_data[8:4];
+				// Connect busses
+				rw_data <= data_in;
+				// Signalize write_to_reg;
 				write_to_reg <= 1'b1;
-			indirect_addr_offset <= 16'h0001;
+				data_re <= 1'b1;
+			end
+			
 		end
+		`INSTRUCTION_LD_ST_YZP,
 		`INSTRUCTION_LD_ST_YZN:
 		begin
-			rd_addr_d <= {{3{1'b1}}, pgm_data[3], 1'b0};
-			rd_16bit_d <= 1'b1;
-			rw_addr <= {{3{1'b1}}, pgm_data[3], 1'b0};
-			rw_16bit <= 1'b1;
-			rw_data <= indirect_addr_offset_res;
-			if(!pgm_data[9])
-				data_re <= 1'b1;
+			rd_addr_r <= {{3{1'b1}}, ~pgm_data[3], 1'b0};
+			rd_16bit_r <= 1'b1;
+			rw_addr <= {{3{1'b1}}, ~pgm_data[3], 1'b0};
+			//rw_16bit <= 1'b1;
+			if(pgm_data[9])
+			begin
+				rd_addr_d <= pgm_data[8:4];
+				data_out <= rd_data_d;
+				data_we_int1 <= 1'b1;
+			end
 			else
+			begin
+				rw_addr <= pgm_data[8:4];
+				// Connect busses
+				rw_data <= data_in;
+				// Signalize write_to_reg;
 				write_to_reg <= 1'b1;
-			indirect_addr_offset <= {16{1'b1}};
-		end
-		`INSTRUCTION_LD_ST_XP:
-		begin
-			rd_addr_d <= 5'd26;
-			rd_16bit_d <= 1'b1;
-			rw_addr <= 5'd26;
-			rw_16bit <= 1'b1;
-			rw_data <= indirect_addr_offset_res;
-			if(!pgm_data[9])
 				data_re <= 1'b1;
-			else
-				write_to_reg <= 1'b1;
-			indirect_addr_offset <= 16'h0001;
+			end
 		end
+		`INSTRUCTION_LD_ST_XP,
 		`INSTRUCTION_LD_ST_XN:
 		begin
-			rd_addr_d <= 5'd26;
-			rd_16bit_d <= 1'b1;
+			rd_addr_r <= 5'd26;
+			rd_16bit_r <= 1'b1;
 			rw_addr <= 5'd26;
-			rw_16bit <= 1'b1;
-			rw_data <= indirect_addr_offset_res;
-			if(!pgm_data[9])
-				data_re <= 1'b1;
+			//rw_16bit <= 1'b1;
+			if(pgm_data[9])
+			begin
+				rd_addr_d <= pgm_data[8:4];
+				data_out <= rd_data_d;
+				data_we_int1 <= 1'b1;
+			end
 			else
+			begin
+				rw_addr <= pgm_data[8:4];
+				// Connect busses
+				rw_data <= data_in;
+				// Signalize write_to_reg;
 				write_to_reg <= 1'b1;
-			indirect_addr_offset <= {16{1'b1}};
+				data_re <= 1'b1;
+			end
 		end
+`endif
+`endif
 		`INSTRUCTION_XCH,
 		`INSTRUCTION_LAS,
 		`INSTRUCTION_LAC,
 		`INSTRUCTION_LAT:
 		begin
-			rd_addr_d <= 5'b11110;
+			rd_addr_d <= pgm_data[8:4];
+			rd_addr_r <= 5'h1e;
+			rw_addr <= pgm_data[8:4];
 			data_re <= 1'b1;
+			casex(pgm_data)
+			`INSTRUCTION_XCH: data_out <= rd_data_d;
+			`INSTRUCTION_LAS: data_out <= data_in | rd_data_d;
+			`INSTRUCTION_LAC: data_out <= data_in & ~rd_data_d;
+			`INSTRUCTION_LAT: data_out <= data_in ^ rd_data_d;
+			endcase
+			// Connect busses
+			rw_data <= data_in;
+			// Signalize write_to_reg;
+			write_to_reg <= 1'b1;
 		end
 		`INSTRUCTION_IN_OUT:
 		begin
@@ -272,19 +381,26 @@ begin
 				write_to_io <= 1'b1; // Put "data_we" to high to store the selected register.
 			end
 		end
-`ifdef USE_MULTIPLYER
-		`INSTRUCTION_MUL:
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+`ifndef CORE_TYPE_CLASSIC_8K
+`ifndef CORE_TYPE_CLASSIC_128K
+`INSTRUCTION_MUL:
 		begin
 			rw_16bit <= 1'b1;
 			rd_addr_d <= pgm_data[8:4];
 			rd_addr_r <= {pgm_data[9], pgm_data[3:0]};
 			// Connect busses
-			rw_data <= alu_out;
 			alu_in_1 <= rd_data_d;
 			alu_in_2 <= rd_data_r;
+			rw_data <= alu_out;
 			// Signalize write_to_reg;
-			write_to_reg <= 1'b1;
+			//write_to_reg <= 1'b1;
+			// Because the multiply unit has more latency, we will add an extra clock.
 		end
+`endif
+`endif
+`endif
 `endif
 		`INSTRUCTION_LDI:
 		begin
@@ -294,6 +410,8 @@ begin
 			// Signalize write_to_reg;
 			write_to_reg <= 1'b1;
 		end
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
 		`INSTRUCTION_ADIW_SBIW:
 		begin
 			rw_addr <= {2'b11, pgm_data[5:4], 1'b0};
@@ -314,14 +432,27 @@ begin
 			if(pgm_data[9])
 			begin
 				rd_addr_d <= pgm_data[8:4];
-				rw_data <= rd_data_d;
+				data_out <= rd_data_d;
+				data_we_int1 <= 1'b1; // Put "data_we" to high to store the selected register.
+			end
+			else
+			begin
+				rd_addr_d <= pgm_data[8:4];
+				rw_addr <= pgm_data[8:4];
+				// Connect busses
+				rw_data <= data_in;
+				// Signalize write_to_reg;
+				write_to_reg <= 1'b1;
+				data_re <= 1'b1;
 			end
 		end
 		`INSTRUCTION_IJMP:
 		begin
-			rd_addr_d <= 5'b11110;
+			rd_addr_d <= 5'h1e;
 			rd_16bit_d <= 1'b1;
 		end
+`endif
+`endif
 		`INSTRUCTION_CBI_SBI:
 		begin
 			io_addr <= {{11{1'b0}}, pgm_data[7:3]};
@@ -357,140 +488,145 @@ begin
 				endcase
 			end
 		end
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+		`INSTRUCTION_ICALL,
+`endif
+`endif
+		`INSTRUCTION_RCALL:
+		begin
+			data_out <= PC_PLUS_ONE[7:0];// Put low byte of the PC.
+			data_we_int1 <= 1'b1; // Put "data_we" to high to store low byte of the PC.
+		end
+		`INSTRUCTION_CALL:
+		begin
+			data_out <= PC_PLUS_TWO[7:0];
+			data_we_int1 <= 1'b1; // Put "data_we" to high to store low byte of the PC.
+		end
+		`INSTRUCTION_RET_RETI:
+		begin
+			data_re <= 1'b1;
+		end
 		endcase
 	end
 	`STEP2:
 	begin
-		casex(tmp_pgm_data_connector)
+		casex(tmp_pgm_data)
+		`INSTRUCTION_RET_RETI:
+		begin
+			data_re <= 1'b1;
+		end
+		`INSTRUCTION_CALL:
+		begin
+			data_out <= PC_PLUS_TWO[15:8];
+			data_we_int1 <= 1'b1; // Put "data_we" to high to store low byte of the PC.
+		end
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
 		`INSTRUCTION_ICALL:
 		begin
-			rd_addr_d <= 5'b11110;
-			rd_16bit_d <= 1'b1;
+			data_out <= PC_PLUS_ONE[15:8];// Put high byte of the PC.
+			rd_addr_d <= 5'h1e;
+			data_we_int1 <= 1'b1; // Put "data_we" to high to store low byte of the PC.
 		end
-		`INSTRUCTION_POP_PUSH:
+`endif
+`endif
+		`INSTRUCTION_RCALL:
 		begin
-			if(!tmp_pgm_data_connector[9])
-				rd_addr_d <= tmp_pgm_data_connector[8:4];
+			data_out <= PC_PLUS_ONE[15:8];// Put high byte of the PC.
+			data_we_int1 <= 1'b1; // Put "data_we" to high to store low byte of the PC.
 		end
-		`INSTRUCTION_XCH,
-		`INSTRUCTION_LAS,
-		`INSTRUCTION_LAC,
-		`INSTRUCTION_LAT:
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+		`INSTRUCTION_LDS_STS:
 		begin
-			rw_addr <= 5'b11110;
-			// Connect busses
-			rw_data <= data_in;
-			// Signalize write_to_reg;
+			if(tmp_pgm_data[9])
+			begin
+				rd_addr_d <= tmp_pgm_data[8:4];
+				data_out <= rd_data_d;
+				data_we_int1 <= 1'b1; // Put "data_we" to high to store low byte of the PC.
+			end
+			else
+			begin
+				rw_addr <= tmp_pgm_data[8:4];
+				// Connect busses
+				rw_data <= data_in;
+				// Signalize write_to_reg;
+				write_to_reg <= 1'b1;
+				data_re <= 1'b1;
+			end
+			
+		end
+		`INSTRUCTION_LD_ST_XP,
+		`INSTRUCTION_LD_ST_XN:
+		begin
+			rd_addr_r <= 5'd26;
+			rd_16bit_r <= 1'b1;
+			rw_addr <= 5'd26;
+			rw_16bit <= 1'b1;
+			case(tmp_pgm_data[1:0])
+			2'b01: rw_data <= rd_data_r_PLUS_ONE;
+			2'b10: rw_data <= rd_data_r_MINUS_ONE;
+			endcase
 			write_to_reg <= 1'b1;
 		end
-		`INSTRUCTION_LDD_STD,
 		`INSTRUCTION_LD_ST_YZP,
-		`INSTRUCTION_LD_ST_YZN,
-		`INSTRUCTION_LD_ST_XP,
-		`INSTRUCTION_LD_ST_XN,
-		`INSTRUCTION_LD_ST_X:
+		`INSTRUCTION_LD_ST_YZN:
 		begin
-			indirect_addr_offset <= {{11{1'b0}}, tmp_pgm_data_connector[11:10], tmp_pgm_data_connector[2:0]};
-			if(tmp_pgm_data_connector[9])
-				rd_addr_d <= tmp_pgm_data_connector[8:4];
+			rd_addr_r <= {{3{1'b1}}, ~pgm_data[3], 1'b0};
+			rd_16bit_r <= 1'b1;
+			rw_addr <= {{3{1'b1}}, ~pgm_data[3], 1'b0};
+			rw_16bit <= 1'b1;
+			case(tmp_pgm_data[1:0])
+			2'b01: rw_data <= rd_data_r_PLUS_ONE;
+			2'b10: rw_data <= rd_data_r_MINUS_ONE;
+			endcase
+			write_to_reg <= 1'b1;
 		end
+`endif
+`endif
 		`INSTRUCTION_CPSE,
 		`INSTRUCTION_SBRC_SBRS:
 		begin
-			rd_addr_d <= tmp_pgm_data_connector[8:4];
-			rd_addr_r <= {tmp_pgm_data_connector[9], tmp_pgm_data_connector[3:0]};
+			rd_addr_d <= tmp_pgm_data[8:4];
+			rd_addr_r <= {tmp_pgm_data[9], tmp_pgm_data[3:0]};
 		end
 		`INSTRUCTION_SBIC_SBIS:
 		begin
-			io_addr <= {{11{1'b0}}, tmp_pgm_data_connector[7:3]};
+			io_addr <= {{11{1'b0}}, tmp_pgm_data[7:3]};
 			io_re <= 1'b1;
 		end
-		endcase
-	end
-	`STEP3:
-	begin
-		casex(tmp_pgm_data_connector)
-		`INSTRUCTION_LDD_STD,
-		`INSTRUCTION_LD_ST_YZP,
-		`INSTRUCTION_LD_ST_YZN,
-		`INSTRUCTION_LD_ST_XP,
-		`INSTRUCTION_LD_ST_XN,
-		`INSTRUCTION_LD_ST_X:
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+`ifndef CORE_TYPE_CLASSIC_8K
+`ifndef CORE_TYPE_CLASSIC_128K
+		`INSTRUCTION_MUL:
 		begin
-			if(!tmp_pgm_data_connector[9])
-			begin
-				rw_addr <= tmp_pgm_data_connector[8:4];
-				// Connect busses
-				rw_data <= data_in;
-				// Signalize write_to_reg;
-				write_to_reg <= 1'b1;
-				data_re <= 1'b1;
-			end
+			rw_16bit <= 1'b1;
+			rd_addr_d <= pgm_data[8:4];
+			rd_addr_r <= {pgm_data[9], pgm_data[3:0]};
+			// Connect busses
+			alu_in_1 <= rd_data_d;
+			alu_in_2 <= rd_data_r;
+			rw_data <= alu_out;
+			// Signalize write_to_reg;
+			write_to_reg <= 1'b1;
 		end
-		`INSTRUCTION_LDS_STS:
-		begin
-			rd_addr_d <= tmp_pgm_data_connector[8:4];
-			if(!tmp_pgm_data_connector[9])
-			begin
-				rw_addr <= tmp_pgm_data_connector[8:4];
-				// Connect busses
-				rw_data <= data_in;
-				// Signalize write_to_reg;
-				write_to_reg <= 1'b1;
-				data_re <= 1'b1;
-			end
-		end
-		`INSTRUCTION_POP_PUSH:
-		begin
-			if(!tmp_pgm_data_connector[9])
-			begin
-				rw_addr <= tmp_pgm_data_connector[8:4];
-				// Connect busses
-				rw_data <= data_in;
-				// Signalize write_to_reg;
-				write_to_reg <= 1'b1;
-				data_re <= 1'b1;
-			end
-			if(!tmp_pgm_data_connector[9])
-			begin
-			end
-		end
-		`INSTRUCTION_RET_RETI:
-		begin
-			data_re <= 1'b1;
-		end
-		endcase
-	end
-	`STEP4:
-	begin
-		casex(tmp_pgm_data_connector)
-		`INSTRUCTION_RET_RETI:
-		begin
-			data_re <= 1'b1;
-		end
+`endif
+`endif
+`endif
+`endif
 		endcase
 	end
 	endcase
 end
 
-reg [15:0]pc_offset = 0;
-reg [15:0]pc_offset_int = 0;
-reg [1:0]sp_inc_dec;
-wire [15:0]sp_inc_value = (sp_inc_dec == 2'b11) ? {16{1'b1}} :
-							(sp_inc_dec == 2'b01) ? 16'h0001 :
-							16'h0000;
-							
-reg [7:0]TEMP8 = 0;
-reg [7:0]TEMP8_PC = 0;
-reg [15:0]TEMP16 = 0;
-wire [15:0]relative_offset = step_cnt == `STEP1 ? {{5{pgm_data[11]}}, pgm_data[10:0]} + 16'h0001 : {{5{tmp_pgm_data[11]}}, tmp_pgm_data[10:0]};
-wire [0:7]ALU_FLAGS_FOR_CHECK = {ALU_FLAG_C_OUT,ALU_FLAG_Z_OUT,ALU_FLAG_N_OUT,ALU_FLAG_V_OUT,ALU_FLAG_S_OUT,ALU_FLAG_H_OUT,ALU_FLAG_T_OUT,ALU_FLAG_I_OUT};
-wire [15:0]PC_PLUS_ONE = PC + 1;
-wire [15:0]PC_PLUS_TWO = PC + 2;
+wire [15:0]relative_offset = PC_PLUS_ONE + {{5{pgm_data[11]}}, pgm_data[10:0]};
+//wire [0:7]ALU_FLAGS_FOR_CHECK = {ALU_FLAG_C_OUT,ALU_FLAG_Z_OUT,ALU_FLAG_N_OUT,ALU_FLAG_V_OUT,ALU_FLAG_S_OUT,ALU_FLAG_H_OUT,ALU_FLAG_T_OUT,ALU_FLAG_I_OUT};
 
-always @ (clk or data_we_int)
+always @ (clk or data_we_int or data_we_int1)
 begin
-	data_we <= data_we_int & ~clk;
+	data_we <= (data_we_int | data_we_int1) & ~clk;
 end
 
 /*
@@ -509,8 +645,6 @@ begin
 		ALU_FLAGS[5] <= 1'b0;	//Half Carry Flag
 		ALU_FLAGS[6] <= 1'b0;	//Transfer bit used by BLD and BST instructions
 		ALU_FLAGS[7] <= 1'b0;	//Global Interrupt Enable/Disable Flag
-		sp_inc_dec <= 2'h0;
-		pc_offset <= {{15{1'b0}}, 1'b1};
 		PC <= {16{1'b0}};
 		SP <= {16{1'b1}};
 		step_cnt <= `STEP1;
@@ -526,92 +660,110 @@ begin
 		ALU_FLAGS[6] <= ALU_FLAG_T_OUT;	//Transfer bit used by BLD and BST instructions
 		ALU_FLAGS[7] <= ALU_FLAG_I_OUT;	//Global Interrupt Enable/Disable Flag
 		step_cnt <= `STEP1;
-		
-		sp_inc_dec <= 2'h0;
-		SP = SP + sp_inc_value;
-		PC <= PC + pc_offset;// Increment PC by 1 if not specified otherwise.
-		if(pc_offset != 16'h0001)// If last instruction has been a relative jump, reload "pc_offset" with 0 for instruction increment.
-			pc_offset <= {{15{1'b0}}, 1'b1};
-		data_addr <= 'hz;
-		data_out <= 'hz;
+		PC <= PC_PLUS_ONE;// Increment PC by 1 if not specified otherwise.
 		data_we_int <= 1'b0; // Clear "data_we" if not specified otherwise.
 		case(step_cnt)
 		`STEP1:
 		begin
 			casex(pgm_data)
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+`ifndef CORE_TYPE_CLASSIC_8K
 			`INSTRUCTION_JMP:
 			begin
 				tmp_pgm_data <= pgm_data;
-				tmp_pgm_data_connector <= pgm_data;
 				step_cnt <= `STEP2;
 			end
+`endif
+`endif
+`endif
 			`INSTRUCTION_RJMP:
 			begin
-				PC <= PC + relative_offset;
+				PC <= relative_offset;
 			end
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
 			`INSTRUCTION_IJMP:
 			begin
 				PC <= rd_data_d;
 			end
+`endif
+`endif
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+`ifndef CORE_TYPE_CLASSIC_8K
 			`INSTRUCTION_CALL,
+`endif
+`endif
+`endif
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
 			`INSTRUCTION_ICALL,
+`endif
+`endif
 			`INSTRUCTION_RCALL:
 			begin
 				step_cnt <= `STEP2;
 				tmp_pgm_data <= pgm_data;
-				tmp_pgm_data_connector <= pgm_data;
-				pc_offset <= {16{1'b0}};// If the instruction is different than CALL freeze the PC counter.
+				SP <= SP_MINUS_ONE;
+				casex(pgm_data)
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+				`INSTRUCTION_ICALL,
+`endif
+`endif
+				`INSTRUCTION_RCALL: PC <= PC;
+				endcase
 			end
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
 			`INSTRUCTION_POP_PUSH:
 			begin
-				step_cnt <= `STEP2;
-				tmp_pgm_data <= pgm_data;
-				tmp_pgm_data_connector <= pgm_data;
-				sp_inc_dec <= {pgm_data[9], 1'b1};// Increment/Decrement SP.
 				if(pgm_data[9])
-				begin
-					data_addr <= SP;
-					data_out <= rd_data_d;
-					//sp_inc_dec <= 2'b11;// Decrement SP.
-					data_we_int <= 1'b1; // Put "data_we" to high to store the selected register.
-				end
+					SP <= SP_MINUS_ONE;
 				else
-				begin
-					//sp_inc_dec <= 2'b01;// Increment SP.
-				end
-				pc_offset <= {16{1'b0}};// Freeze the PC counter.
+					SP <= SP_PLUS_ONE;
 			end
+`endif
+`endif
 			`INSTRUCTION_RET_RETI:
 			begin
 				step_cnt <= `STEP2;
 				tmp_pgm_data <= pgm_data;
-				tmp_pgm_data_connector <= pgm_data;
-				sp_inc_dec <= 2'b01;// Increment SP.
-				pc_offset <= {16{1'b0}};// Freeze the PC counter.
+				SP <= SP_PLUS_ONE;
+				PC <= {data_in, PC[7:0]};
 			end
-			`INSTRUCTION_LDD_STD,
-			`INSTRUCTION_LDS_STS,
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+			`INSTRUCTION_LDS_STS:
+			begin
+				tmp_pgm_data <= pgm_data;
+				step_cnt <= `STEP2;
+			end
+`endif
+`endif
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+`ifndef CORE_TYPE_CLASSIC_8K
+`ifndef CORE_TYPE_CLASSIC_128K
+			`INSTRUCTION_MUL,
+`endif
+`endif
+`endif
+`endif
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
 			`INSTRUCTION_LD_ST_YZP,
 			`INSTRUCTION_LD_ST_YZN,
-			`INSTRUCTION_LD_ST_X,
 			`INSTRUCTION_LD_ST_XP,
 			`INSTRUCTION_LD_ST_XN:
 			begin
 				tmp_pgm_data <= pgm_data;
-				tmp_pgm_data_connector <= pgm_data;
 				step_cnt <= `STEP2;
-				pc_offset <= {16{1'b0}};// Freeze the PC counter.
+				PC <= PC;
 			end
-			`INSTRUCTION_XCH,
-			`INSTRUCTION_LAS,
-			`INSTRUCTION_LAC,
-			`INSTRUCTION_LAT:
-			begin
-				tmp_pgm_data <= pgm_data;
-				tmp_pgm_data_connector <= pgm_data;
-				step_cnt <= `STEP2;
-				data_addr <= rd_data_d;
-			end
+`endif
+`endif
 			`INSTRUCTION_COND_BRANCH:
 			begin
 				if(pgm_data[10] != ALU_FLAGS[pgm_data[2:0]])
@@ -622,7 +774,6 @@ begin
 			`INSTRUCTION_SBIC_SBIS:
 			begin
 				tmp_pgm_data <= pgm_data;
-				tmp_pgm_data_connector <= pgm_data;
 				step_cnt <= `STEP2;
 			end
 			`INSTRUCTION_BLD_BST:
@@ -635,116 +786,41 @@ begin
 		`STEP2:
 		begin
 			casex(tmp_pgm_data)
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+`ifndef CORE_TYPE_CLASSIC_8K
 			`INSTRUCTION_JMP:
 			begin
 				PC <= pgm_data;
 			end
-			`INSTRUCTION_POP_PUSH:
+			`INSTRUCTION_CALL:
 			begin
-				if(tmp_pgm_data[9])
-				begin
-					//data_out <= rd_data_d;
-					//data_we_int <= 1'b1; // Put "data_we" to high to store the selected register.
-				end
-				else
-				begin
-					step_cnt <= `STEP3;
-					data_addr <= SP;
-					pc_offset <= {16{1'b0}};
-				end
+				SP <= SP_MINUS_ONE;
+				PC <= pgm_data;
 			end
-			`INSTRUCTION_CALL,
-			`INSTRUCTION_ICALL,
+`endif
+`endif
+`endif
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+			`INSTRUCTION_ICALL:
+			begin
+				SP <= SP_MINUS_ONE;
+				PC <= rd_data_d;// Backup the reg Z value to a 16bit temporary register because the reading section of REG's is asynchronous.
+			end
+`endif
+`endif
 			`INSTRUCTION_RCALL:
 			begin
-				step_cnt <= `STEP3;
-				data_out <= PC[7:0];// Put low byte of the PC.
-				data_we_int <= 1'b1; // Put "data_we" to high to store low byte of the PC.
-				data_addr <= SP;
-				TEMP8 <= PC[15:8];// Put high byte of the PC.
-				sp_inc_dec <= 2'b11;// Decrement SP.
-				casex(tmp_pgm_data)
-					`INSTRUCTION_ICALL: 
-					begin
-						TEMP16 <= rd_data_d;// Backup the reg Z value to a 16bit temporary register because the reading section of REG's is asynchronous.
-						pc_offset <= {16{1'b0}};// If the instruction is different than CALL freeze the PC counter.
-					end
-					`INSTRUCTION_RCALL: 
-					begin
-						TEMP16 <= relative_offset;// If is a relative CALL load the offset to "TEMP16".
-						pc_offset <= {16{1'b0}};// If the instruction is different than CALL freeze the PC counter.
-					end
-					`INSTRUCTION_CALL: 
-					begin
-						data_out <= PC_PLUS_ONE[7:0];
-						TEMP8 <= PC_PLUS_ONE[15:8];
-					end
-				endcase
+				SP <= SP_MINUS_ONE;
+				PC <= relative_offset;// If is a relative CALL load the offset to "TEMP16".
 			end
 			`INSTRUCTION_RET_RETI:
 			begin
-				step_cnt <= `STEP3;
-				sp_inc_dec <= 2'b01;// Increment SP.
-				data_addr <= SP;
-				pc_offset <= {16{1'b0}};// Freeze the PC counter.
-			end
-			`INSTRUCTION_LDD_STD,
-			//`INSTRUCTION_LD_ST_YZN,
-			`INSTRUCTION_LD_ST_X,
-			`INSTRUCTION_LD_ST_XN:
-			begin
-				step_cnt <= `STEP3;
-				data_addr <= indirect_addr_offset_res;
-				if(tmp_pgm_data[9])
-				begin
-					data_out <= rd_data_d;
-					data_we_int <= 1'b1; // Put "data_we" to high to store the selected register.
-				end
-				pc_offset <= {16{1'b0}};// If the instruction is different than CALL freeze the PC counter.
-			end
-			`INSTRUCTION_LDS_STS:
-			begin
-				data_addr <= pgm_data;
-				if(tmp_pgm_data[9])
-				begin
-					data_out <= rd_data_d;
-					data_we_int <= 1'b1; // Put "data_we" to high to store low byte of the PC.
-				end
-				else
-				begin
-					step_cnt <= `STEP3;
-				end
-			end
-			`INSTRUCTION_LD_ST_YZP,
-			`INSTRUCTION_LD_ST_XP:
-			begin
-				data_addr <= rd_data_d;
-				if(tmp_pgm_data[9])
-				begin
-					data_out <= rd_data_d;
-					data_we_int <= 1'b1; // Put "data_we" to high to store the selected register.
-				end
-			end
-			`INSTRUCTION_LD_ST_YZN:
-			begin
-				data_addr <= indirect_addr_offset_res;
-				if(tmp_pgm_data[9])
-				begin
-					data_out <= rd_data_d;
-					data_we_int <= 1'b1; // Put "data_we" to high to store low byte of the PC.
-				end
-			end
-			`INSTRUCTION_XCH:
-			begin
-				data_out <= rd_data_d;
-				data_we_int <= 1'b1; // Put "data_we" to high to store the selected register.
-			end
-			`INSTRUCTION_LAS,
-			`INSTRUCTION_LAC,
-			`INSTRUCTION_LAT:
-			begin
-				step_cnt <= `STEP3;
-				TEMP8 <= rd_data_d;
+				SP <= SP_PLUS_ONE;
+				if(tmp_pgm_data[4])
+					ALU_FLAGS[7] <= 1'b1;
+				PC <= {PC[15:8], data_in};
 			end
 			`INSTRUCTION_CPSE:
 			begin
@@ -777,58 +853,6 @@ begin
 				end
 			end
 		endcase
-		end
-		`STEP3:
-		begin
-			casex(tmp_pgm_data)
-			`INSTRUCTION_CALL,
-			`INSTRUCTION_ICALL,
-			`INSTRUCTION_RCALL:
-			begin
-				data_out <= TEMP8;// Put high byte of the PC from "TEMP".
-				data_we_int <= 1'b1; // Put "data_we" to high to store low byte of the PC.
-				data_addr <= SP;
-				sp_inc_dec <= 2'b11;// Decrement SP.
-				casex(tmp_pgm_data)
-					`INSTRUCTION_ICALL: PC <= TEMP16;// If is a indirect CALL instruction load "TMP16"(Z) to PC.
-					`INSTRUCTION_RCALL: pc_offset <= TEMP16;// If is a relative CALL load the "TMP16" to PC offset register.
-					`INSTRUCTION_CALL: PC <= pgm_data;// If is a CALL instruction, load the constant address to PC.
-				endcase
-			end
-			`INSTRUCTION_LAS:
-			begin
-				data_out <= data_in | TEMP8;
-				data_we_int <= 1'b1; // Put "data_we" to high to store the selected register.
-			end
-			`INSTRUCTION_LAC:
-			begin
-				data_out <= data_in & ~TEMP8;
-				data_we_int <= 1'b1; // Put "data_we" to high to store the selected register.
-			end
-			`INSTRUCTION_LAT:
-			begin
-				data_out <= data_in ^ TEMP8;
-				data_we_int <= 1'b1; // Put "data_we" to high to store the selected register.
-			end
-			`INSTRUCTION_RET_RETI:
-			begin
-				step_cnt <= `STEP4;
-				TEMP8_PC <= data_in;
-				data_addr <= SP;
-				pc_offset <= {16{1'b0}};// Freeze the PC counter.
-			end
-			endcase
-		end
-		`STEP4:
-		begin
-			casex(tmp_pgm_data)
-			`INSTRUCTION_RET_RETI:
-			begin
-				if(tmp_pgm_data[4])
-					ALU_FLAGS[7] <= 1'b1;
-				PC <= {TEMP8_PC, data_in};
-			end
-			endcase
 		end
 		endcase
 	end

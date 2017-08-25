@@ -20,8 +20,9 @@
 
 `timescale 1ns / 1ps
 
-`include "mega_core.vh"
 `include "mega_alu.vh"
+`include "mega_core.vh"
+`include "mega_core_cfg.vh"
 
 module mega_alu(
 	input [15:0]inst,
@@ -85,12 +86,18 @@ begin
 		if(!in_addr_1_and_2_equal)
 			in_2_int <= in_2;
 	end
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
 	`INSTRUCTION_ADIW,
 	`INSTRUCTION_SBIW,
+`endif
+`endif
 	`INSTRUCTION_SUB,
 	`INSTRUCTION_SBC,
 	`INSTRUCTION_SUBI,
-	`INSTRUCTION_SBCI: in_2_int <= in_2;
+	`INSTRUCTION_SBCI,
+	`INSTRUCTION_INC,
+	`INSTRUCTION_DEC: in_2_int <= in_2;
 	endcase
 
 	casex(inst)
@@ -98,7 +105,9 @@ begin
 	`INSTRUCTION_LSR,
 	`INSTRUCTION_NEG,
 	`INSTRUCTION_SUB,
-	`INSTRUCTION_SUBI: cin_int <= 1'b0;
+	`INSTRUCTION_SUBI,
+	`INSTRUCTION_INC,
+	`INSTRUCTION_DEC: cin_int <= 1'b0;
 	endcase
 	
 end
@@ -108,8 +117,14 @@ wire [16:0] add_result_int_w_c = add_result_int_w_c_tmp[17:1];
 wire [17:0] sub_result_int_w_c_tmp = {in_1, 1'b0} - {in_2_int, cin_int};
 wire [16:0] sub_result_int_w_c = sub_result_int_w_c_tmp[17:1];
 
-`ifdef USE_MULTIPLYER
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+`ifndef CORE_TYPE_CLASSIC_8K
+`ifndef CORE_TYPE_CLASSIC_128K
 wire [15:0]mul_result_int = in_1 * in_2;
+`endif
+`endif
+`endif
 `endif
 wire carry_8bit = in_1 < in_2;
 wire carry_8bit_plus_carry = in_1 < (in_2 + ALU_FLAG_C_IN);
@@ -132,6 +147,8 @@ begin
 			else
 				{ALU_FLAG_C_OUT, out} <= {add_result_int_w_c[8], 8'h00, add_result_int_w_c[7:0]};
 		end
+		`INSTRUCTION_INC,
+		`INSTRUCTION_DEC:		{ALU_FLAG_C_OUT, out} <= {add_result_int_w_c[8], 8'h00, add_result_int_w_c[7:0]};
 		`INSTRUCTION_SUB,
 		`INSTRUCTION_SBC,
 		`INSTRUCTION_SUBI,
@@ -145,10 +162,20 @@ begin
 		`INSTRUCTION_MOVW: 		{ALU_FLAG_C_OUT, out} <= {1'h00, in_1};
 		`INSTRUCTION_COM: 		{ALU_FLAG_C_OUT, out} <= {1'b1, 8'h00, (8'h00 - in_1[7:0])};
 		`INSTRUCTION_NEG: 		{ALU_FLAG_C_OUT, out} <= {|in_1[7:0], 8'h00, ~in_1[7:0]};
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
 		`INSTRUCTION_ADIW: 		{ALU_FLAG_C_OUT, out} <= add_result_int_w_c;
 		`INSTRUCTION_SBIW: 		{ALU_FLAG_C_OUT, out} <= sub_result_int_w_c;
-`ifdef USE_MULTIPLYER
+`endif
+`endif
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+`ifndef CORE_TYPE_CLASSIC_8K
+`ifndef CORE_TYPE_CLASSIC_128K
 		`INSTRUCTION_MUL: 		{ALU_FLAG_C_OUT, out} <= {mul_result_int[15], mul_result_int};
+`endif
+`endif
+`endif
 `endif
 		`INSTRUCTION_ASR: 		{ALU_FLAG_C_OUT, out} <= {in_1[0], 7'h00, in_1[7], in_1[7:1]};
 		`INSTRUCTION_CP,
@@ -216,6 +243,14 @@ begin
 		ALU_FLAG_N_OUT <= out[7];
 		ALU_FLAG_Z_OUT <= &(~out[7:0]);
 	end
+	`INSTRUCTION_INC,
+	`INSTRUCTION_DEC:
+	begin
+		ALU_FLAG_S_OUT <= ALU_FLAG_N_OUT & ALU_FLAG_V_OUT;
+		ALU_FLAG_V_OUT <= &{out[7], ~out[6:0]};
+		ALU_FLAG_N_OUT <= out[7];
+		ALU_FLAG_Z_OUT <= &(~out[7:0]);
+	end
 	`INSTRUCTION_SBC,
 	`INSTRUCTION_SBCI,
 	`INSTRUCTION_CPC:
@@ -226,6 +261,8 @@ begin
 		ALU_FLAG_N_OUT <= out[7];
 		ALU_FLAG_Z_OUT <= &(~{out[7:0], ALU_FLAG_Z_IN});
 	end
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
 	`INSTRUCTION_ADIW,
 	`INSTRUCTION_SBIW:
 	begin
@@ -234,6 +271,8 @@ begin
 		ALU_FLAG_N_OUT <= out[15];
 		ALU_FLAG_Z_OUT <= &(~out[15:0]);
 	end
+`endif
+`endif
 	`INSTRUCTION_AND,
 	`INSTRUCTION_OR,
 	`INSTRUCTION_COM,
@@ -280,11 +319,14 @@ begin
 		3'd7: ALU_FLAG_I_OUT <= inst[7];
 		endcase
 	end
-`ifdef USE_MULTIPLYER
-	`INSTRUCTION_MUL:
-	begin
-		ALU_FLAG_Z_OUT <= &(~out[15:0]);
-	end
+`ifndef CORE_TYPE_REDUCED
+`ifndef CORE_TYPE_MINIMAL
+`ifndef CORE_TYPE_CLASSIC_8K
+`ifndef CORE_TYPE_CLASSIC_128K
+	`INSTRUCTION_MUL: ALU_FLAG_Z_OUT <= &(~out[15:0]);
+`endif
+`endif
+`endif
 `endif
 	endcase
 end
