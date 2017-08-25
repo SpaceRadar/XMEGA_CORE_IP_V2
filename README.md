@@ -7,17 +7,20 @@ It is a fully asynchronnous core only with some parts that are sinchronized with
 
 The posedge to posedge clock latency must be bigger than total latency of the ROM memory and core logic.
 
-Utilization report from implementation:
+Utilization report from implementation for CORE_TYPE_CLASSIC_128K:
 
-* Slice LUTs = 1120
+* Slice LUTs = 1241
 * Slice Registers = 50
-* F7 Muxes = 21
+* F7 Muxes = 38
 * F8 Muxes = 0
-* Slices = 322
-* LUT as logic = 1088
+* Slices = 399
+* LUT as logic = 1209
 * LUT as memory = 32
-* LUT as Flop Flops Pairs = 32
+* LUT as Flop Flops Pairs = 33
 
+More details about instruction set implementation of different core type you can read here: https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
+
+The core is configurable from minimal core to XMEGA core.
 
 At this moment has implemented the next instructions:
 
@@ -31,7 +34,7 @@ At this moment has implemented the next instructions:
 * CPC, CP (1 clock)
 * SBC, SUB (1 clock)
 * ADD, ADC, ROL, LSL (1 clock)
-* CPSE (2 clock) In second cicle need to see if next inst is a on word or two word inst.
+* CPSE (2 clock)
 * AND (1 clock)
 * EOR (1 clock)
 * OR (1 clock)
@@ -40,16 +43,18 @@ At this moment has implemented the next instructions:
 * SBCI, SUBI (1 clock)
 * ORI, SBR (1 clock)
 * ANDI, CBR (1 clock)
-* LDD, STD (1 clock)
-* LDS, STS (1 clock)
-* LD Y+, LD Z+, ST Y+, ST Z+ (not implemented yet)
-* LD -Y, LD -Z, ST -Y, ST -Z (not implemented yet)
+* LDD, STD (1 clock) (original 2 clock)
+* LDS, STS (1 clock) (original 2/3 clock)
+* LD Y+, LD Z+, ST Y+, ST Z+ (2 clock)
+* LD -Y, LD -Z, ST -Y, ST -Z (2 clock)
 * LPM_Z (not implemented yet)
 * LPM_ZP (not implemented yet)
-* LD_X, ST_X (not implemented yet)
-* LD X+, ST X+ (not implemented yet)
-* LD -X, ST -X (not implemented yet)
-* POP, PUSH (1 clock)
+* XCH, LAS, LAC, LAT (1 clock) (original 2 clock) (from second revision silicon - AU,B,C parts)
+* LD_X, ST_X (1 clock) (original 2 clock)
+* LD X+, ST X+ (2 clock)
+* LD -X, ST -X (2 clock)
+* POP (1 clock) (original 2 clock)
+* PUSH (1 clock)
 * COM (1 clock)
 * NEG (1 clock)
 * SWAP (1 clock)
@@ -60,20 +65,21 @@ At this moment has implemented the next instructions:
 * SEx, CLx(1 clock)
 * RET (2 clock)
 * RETI (2 clock)
-* IJMP, ICALL (1 clock, 2 clock)
+* IJMP (1 clock) (original 2 clock)
+* ICALL (2 clock) (original 3 clock)
 * DEC (1 clock)
-* JMP, CALL (2 clock)
+* JMP, CALL (2 clock) (original 3 clock)
 * ADIW (1 clock)
 * SBIW (1 clock)
 * CBI, SBI (1 clock)
-* SBIC, SBIS (2 clock) In second cicle need to see if next inst is a on word or two word inst.
-* MUL (1 clock) Optional, has 3 ms latency, I will put them on 2 clock to rise working frequency of the core.
+* SBIC, SBIS (2 clock)
+* MUL (2 clock) (original 1 clock).
 * IN, OUT (1 clock)
 * RJMP, RCALL (1 clock, 2 clock)
 * LDI (1 clock)
 * BRxx (1 clock)
 * BLD, BST (1 clock)
-* SBRC, SBRS (2 clock) In second cicle need to see if next inst is a on word or two word inst.
+* SBRC, SBRS (2 clock)
 
 All instruction that is executed on more than 1 core clock it will be optimized. 
 
@@ -86,6 +92,7 @@ This sequency is made to test the implemented instructions.
 
 
 ```asm
+
 .org 0
 	rjmp start
 start3:
@@ -175,9 +182,24 @@ _ijmp:
 	jmp cpse_jmp
 	nop
 
+	st -z, r16
+	ld r17,z+
+	ldi xl, LOW(0x35)
+	ldi xh, HIGH(0x35)
+	ldi r16, 0x22
+	st -x, r16
+	inc r16
+	st -x, r16
+	inc r16
+	st -x, r16
+	ld r17,x+
+	ld r17,x+
+	ld r17,x+
+
 cpse_jmp:
 	ldi ZL, LOW(_icall)
 	ldi ZH, HIGH(_icall)
 	icall
 	jmp start1
+
 ```
