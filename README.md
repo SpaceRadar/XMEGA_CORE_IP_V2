@@ -17,6 +17,8 @@ Utilization report from implementation for CORE_TYPE_CLASSIC_128K:
 * LUT as memory = 32
 * LUT as Flop Flops Pairs = 33
 
+The IP was moved to https://github.com/MorgothCreator/VerilogUtilIP directory, here is only the implementation project with implementation top and simulation top.
+
 More details about instruction set implementation of different core type you can read here: https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 
 The core is configurable from minimal core to XMEGA core.
