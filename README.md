@@ -26,10 +26,10 @@ At this moment has implemented the next instructions:
 
 * NOP (1 clock)
 * MOVW (1 clock)
-* MULS (not implemented yet)
-* MULSU (not implemented yet)
-* FMUL (not implemented yet)
-* FMULSU (not implemented yet)
+* MULS (2 clock) (original 1 clock) One extra clock because the multiply unit on FPGA has ~3ms latency.
+* MULSU (2 clock) (original 1 clock) One extra clock because the multiply unit on FPGA has ~3ms latency.
+* FMUL (2 clock) (original 1 clock) One extra clock because the multiply unit on FPGA has ~3ms latency.
+* FMULS(U) (2 clock) (original 1 clock) One extra clock because the multiply unit on FPGA has ~3ms latency.
 * CPC, CP (1 clock)
 * SBC, SUB (1 clock)
 * ADD, ADC, ROL, LSL (1 clock)
@@ -46,8 +46,8 @@ At this moment has implemented the next instructions:
 * LDS, STS (1 clock) (original 2/3 clock)
 * LD Y+, LD Z+, ST Y+, ST Z+ (2 clock)
 * LD -Y, LD -Z, ST -Y, ST -Z (2 clock)
-* LPM_Z (not implemented yet)
-* LPM_ZP (not implemented yet)
+* LPM_Z (2 clock) (original 3 clock)
+* LPM_Z+ (2 clock) (original 3 clock)
 * XCH, LAS, LAC, LAT (1 clock) (original 2 clock) (from second revision silicon - AU,B,C parts)
 * LD_X, ST_X (1 clock) (original 2 clock)
 * LD X+, ST X+ (2 clock)
