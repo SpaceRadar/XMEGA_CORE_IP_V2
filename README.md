@@ -28,10 +28,10 @@ At this moment has implemented the next instructions:
 
 * NOP (1 clock)
 * MOVW (1 clock)
-* MULS (2 clock) (original 1 clock) One extra clock because the multiply unit on FPGA has ~3ms latency.
-* MULSU (2 clock) (original 1 clock) One extra clock because the multiply unit on FPGA has ~3ms latency.
-* FMUL (2 clock) (original 1 clock) One extra clock because the multiply unit on FPGA has ~3ms latency.
-* FMULS(U) (2 clock) (original 1 clock) One extra clock because the multiply unit on FPGA has ~3ms latency.
+* MULS (2 clock) (original 1 clock) One extra clock because is a cascade unit and take longer.
+* MULSU (2 clock) (original 1 clock) One extra clock because is a cascade unit and take longer.
+* FMUL (2 clock) (original 1 clock) One extra clock because is a cascade unit and take longer.
+* FMULS(U) (2 clock) (original 1 clock) One extra clock because is a cascade unit and take longer.
 * CPC, CP (1 clock)
 * SBC, SUB (1 clock)
 * ADD, ADC, ROL, LSL (1 clock)
@@ -74,7 +74,7 @@ At this moment has implemented the next instructions:
 * SBIW (1 clock)
 * CBI, SBI (1 clock)
 * SBIC, SBIS (2 clock)
-* MUL (2 clock) (original 1 clock) One extra clock because the multiply unit on FPGA has ~3ms latency.
+* MUL (2 clock) (original 1 clock) One extra clock because is a cascade unit and take longer.
 * IN, OUT (1 clock)
 * RJMP, RCALL (1 clock, 2 clock)
 * LDI (1 clock)
@@ -82,10 +82,10 @@ At this moment has implemented the next instructions:
 * BLD, BST (1 clock)
 * SBRC, SBRS (2 clock)
 
-All instruction that is executed on more than 1 core clock it will be optimized. 
+All instruction that is executed on more than 1 core clock it will be optimized, except multiply that is a cascade unit and take longer for result came on. 
 
-The implementation is made for Arty Artix-7 from Digilent.
-On the implementation and simulation it run this bounch of code that will togle and xor the eight LEDs from board with the four switches and four buttons from the board every ~ 1s.
+The implementation project is made for Arty Artix-7 from Digilent.
+On the implementation and simulation it run this bounch of code that will togle and xor the eight LEDs from board with the four switches and four buttons from the board every ~ 1s, all of these actions are made through stack, ram, different registers, rotation etc.
 
 The core work at 66.66Mhz without timing violations, but in reality can work at more than 100Mhz.
 
