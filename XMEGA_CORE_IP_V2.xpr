@@ -29,7 +29,7 @@
     <Option Name="EnableBDX" Val="FALSE"/>
     <Option Name="DSABoardId" Val="arty"/>
     <Option Name="DSANumComputeUnits" Val="16"/>
-    <Option Name="WTXSimLaunchSim" Val="268"/>
+    <Option Name="WTXSimLaunchSim" Val="269"/>
     <Option Name="WTModelSimLaunchSim" Val="0"/>
     <Option Name="WTQuestaLaunchSim" Val="0"/>
     <Option Name="WTIesLaunchSim" Val="0"/>
@@ -52,42 +52,42 @@
   <FileSets Version="1" Minor="31">
     <FileSet Name="sources_1" Type="DesignSrcs" RelSrcDir="$PSRCDIR/sources_1">
       <Filter Type="Srcs"/>
-      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/xilinx_vivado/mega_alu_h.v">
+      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/mega_alu_h.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/xilinx_vivado/mega_core_h.v">
+      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/mega_core_h.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/xilinx_vivado/mega_core_cfg_h.v">
+      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/mega_core_cfg_h.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/xilinx_vivado/mega_alu.v">
+      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/mega_alu.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/xilinx_vivado/mega_core.v">
+      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/mega_core.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/xilinx_vivado/mega_regs.v">
+      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/mega_regs.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -101,22 +101,38 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/xilinx_vivado/top.v">
+      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/top.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/xilinx_vivado/core1ROMsym.mem">
+      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/xilinx_vivado/top.v">
+        <FileInfo>
+          <Attr Name="AutoDisabled" Val="1"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/core1ROMsym.mem">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/xilinx_vivado/core1ROM.mem">
+      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/core1ROM.mem">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/sim.v">
+        <FileInfo>
+          <Attr Name="AutoDisabled" Val="1"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
@@ -143,6 +159,7 @@
       <Filter Type="Srcs"/>
       <File Path="$PPRDIR/../VerilogUtilIP/xmega_core/xilinx_vivado/sim.v">
         <FileInfo>
+          <Attr Name="AutoDisabled" Val="1"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>

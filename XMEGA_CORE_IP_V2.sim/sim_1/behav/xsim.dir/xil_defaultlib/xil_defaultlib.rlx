@@ -1,0 +1,13 @@
+0.6
+2017.2
+Aug  9 2017
+16:49:39
+C:/GitHub/VerilogUtilIP/memory.v,1505609580,verilog,,,,ram;rom,,,,,,,,
+C:/GitHub/VerilogUtilIP/xmega_core/mega_alu.v,1507178832,verilog,,,C:/GitHub/VerilogUtilIP/xmega_core/mega_alu_h.v;C:/GitHub/VerilogUtilIP/xmega_core/mega_core_h.v;C:/GitHub/VerilogUtilIP/xmega_core/mega_core_cfg_h.v,mega_alu,,,,,,,,
+C:/GitHub/VerilogUtilIP/xmega_core/mega_alu_h.v,1507173877,verilog,,,,,,,,,,,,
+C:/GitHub/VerilogUtilIP/xmega_core/mega_core.v,1507178974,verilog,,,C:/GitHub/VerilogUtilIP/xmega_core/mega_alu_h.v;C:/GitHub/VerilogUtilIP/xmega_core/mega_core_h.v;C:/GitHub/VerilogUtilIP/xmega_core/mega_core_cfg_h.v,mega_core,,,,,,,,
+C:/GitHub/VerilogUtilIP/xmega_core/mega_core_cfg_h.v,1507190423,verilog,,,,,,,,,,,,
+C:/GitHub/VerilogUtilIP/xmega_core/mega_core_h.v,1507175136,verilog,,,,,,,,,,,,
+C:/GitHub/VerilogUtilIP/xmega_core/mega_regs.v,1503536359,verilog,,,,mega_regs,,,,,,,,
+C:/GitHub/VerilogUtilIP/xmega_core/sim.v,1505606340,verilog,,,,sim,,,,,,,,
+C:/GitHub/XMEGA_CORE_IP_V2/XMEGA_CORE_IP_V2.sim/sim_1/behav/glbl.v,1497407496,verilog,,,,glbl,,,,,,,,
