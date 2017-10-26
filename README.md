@@ -6,16 +6,16 @@ It is a fully asynchronnous core only with some parts that are sinchronized with
 
 The posedge to posedge clock latency must be bigger than total latency of the ROM memory and core logic.
 
-Utilization report from implementation for CORE_TYPE_CLASSIC_128K:
+Utilization report from implementation for CORE_TYPE_ENCHANCED_128K:
 
-* Slice LUTs = 1241
-* Slice Registers = 50
-* F7 Muxes = 38
-* F8 Muxes = 0
-* Slices = 399
-* LUT as logic = 1209
+* Slice LUTs = 1553
+* Slice Registers = 74
+* F7 Muxes = 45
+* F8 Muxes = 8
+* Slices = 474
+* LUT as logic = 1489
 * LUT as memory = 32
-* LUT as Flop Flops Pairs = 33
+* LUT as Flop Flops Pairs = 35
 
 The IP was moved to https://github.com/MorgothCreator/VerilogUtilIP directory, here is only the implementation project with implementation top and simulation top.
 
@@ -87,9 +87,9 @@ All instruction that is executed on more than 1 core clock it will be optimized,
 The implementation project is made for Arty Artix-7 from Digilent.
 On the implementation and simulation it run this bounch of code that will togle and xor the eight LEDs from board with the four switches and four buttons from the board every ~ 1s, all of these actions are made through stack, ram, different registers, rotation etc.
 
-The core work at 66.66Mhz without timing violations, but in reality can work at more than 100Mhz.
+The core work at 50Mhz without timing violations, but in reality can work at more than 111Mhz.
 
-This sequency is made to test the implemented instructions.
+This sequency is made to test some of the implemented instructions.
 
 
 ```asm
