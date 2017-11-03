@@ -1,0 +1,13 @@
+# compile verilog/system verilog design source files
+verilog xil_defaultlib  \
+"../../../../../VerilogUtilIP/xmega_core/mega_alu.v" \
+"../../../../../VerilogUtilIP/xmega_core/mega_core.v" \
+"../../../../../VerilogUtilIP/xmega_core/mega_regs.v" \
+"../../../../../VerilogUtilIP/memory.v" \
+"../../../../../VerilogUtilIP/xmega_core/top_uc.v" \
+
+# compile glbl module
+verilog xil_defaultlib "glbl.v"
+
+# Do not sort compile order
+nosort
