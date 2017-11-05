@@ -87,7 +87,7 @@ All instruction that is executed on more than 1 core clock it will be optimized,
 The implementation project is made for Arty Artix-7 from Digilent.
 On the implementation and simulation it run this bounch of code that will togle and xor the eight LEDs from board with the four switches and four buttons from the board every ~ 1s, all of these actions are made through stack, ram, different registers, rotation etc.
 
-The core work at 50Mhz without timing violations, but in reality can work at more than 111Mhz.
+The core work at 45Mhz without timing violations, but in reality can work at 111Mhz.
 
 This sequency is made to test some of the implemented instructions.
 
