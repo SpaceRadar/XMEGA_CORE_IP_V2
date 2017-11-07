@@ -1,5 +1,7 @@
 # XMEGA_CORE_IP_V2
 
+# The project has been moved here https://morgothdisk.com:30001/explore/projects
+
 This is an optimized IP of the Atmel MEGA and XMEGA processor, that is very simple to use.
 
 It is a fully asynchronnous core only with some parts that are sinchronized with the clock and it is synchronized only on positive edge of the clock.
